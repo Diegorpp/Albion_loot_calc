@@ -2,6 +2,8 @@ import streamlit as st
 
 st.title("Calculadora de Loot do Albion")
 
+TAXA_MERCADO = 0.94
+
 # Função para calcular resultados
 def calcular_resultados(jogadores):
     resultados = []
@@ -10,10 +12,10 @@ def calcular_resultados(jogadores):
     for jogador in jogadores:
         gasto_total += jogador["custo_retorno"] + jogador["custo_reparo"]
         loot_total += jogador["loot"]
-    # print(f"Gasto total: {gasto_total}")
-    # print(f"Loot total: {loot_total}")
+    loot_com_desconto = loot_total * TAXA_MERCADO
 
-    lucro_por_jogador = (loot_total - gasto_total) / len(jogadores) if jogadores else 0
+
+    lucro_por_jogador = (loot_com_desconto - gasto_total) / len(jogadores) if jogadores else 0
     print(f"Lucro por jogador: {lucro_por_jogador}")
 
     for jogador in jogadores:
@@ -25,7 +27,8 @@ def calcular_resultados(jogadores):
         resultados.append({
             "nome": jogador["nome"],
             "lucro_liquido": lucro_liquido,
-            "lucro_proporcional": jogador["lucro_proporcional"]
+            "lucro_proporcional": jogador["lucro_proporcional"],
+            "loot_com_desconto": jogador["loot_com_desconto"]
         })
     return resultados
 
@@ -48,12 +51,12 @@ for i in range(int(num_jogadores)):
         custo_reparo = st.number_input(f"Custo Reparo {i+1}", key=f"reparo_{i}", min_value=0.0)
     with col4:
         loot = st.number_input(f"Loot Pessoa {i+1}", key=f"loot_{i}", min_value=0.0)
-
     jogadores.append({
         "nome": nome,
         "custo_retorno": custo_retorno,
         "custo_reparo": custo_reparo,
         "loot": loot,
+        "loot_com_desconto": loot*TAXA_MERCADO
     })
 
 # Botão para calcular
@@ -63,5 +66,14 @@ if st.button("Calcular"):
     for resultado in resultados:
         if resultado["lucro_proporcional"] < 0:
             st.write(f"{resultado['nome']}: Tem que ficar com um total de = {resultado['lucro_proporcional']:.2f} (Perda)")
+            st.write(f"Loot com desconto de {resultado['nome']}: {resultado["loot_com_desconto"]}")
         else:
             st.write(f"{resultado['nome']}: Tem que ficar com um total de = {resultado['lucro_proporcional']:.2f}")
+            st.write(f"Loot com desconto de {resultado['nome']}: {resultado["loot_com_desconto"]}")
+            lucro_positivo = resultado['lucro_proporcional'] - resultado["loot_com_desconto"]
+            if lucro_positivo > 0:
+                st.write(f"{resultado['nome']}: deve receber {lucro_positivo:.2f}")
+                st.write("=====================================================")
+            else:
+                st.write(f"{resultado['nome']}: deve pagar {abs(lucro_positivo):.2f}")
+                st.write("=====================================================")
